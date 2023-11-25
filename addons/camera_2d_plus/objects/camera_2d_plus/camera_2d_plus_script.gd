@@ -52,45 +52,50 @@ func _ready() -> void:
 	flash_layer.name = "FlashLayer" # Updating the name of the new CanvasLayer.
 	flash_layer.layer = FLASH_LAYER # Updating the layer of the new CanvasLayer.
 	call_deferred("add_child", flash_layer) # Adding the new CanvasLayer to the scene.
-	
+
 	cinematic_layer = CanvasLayer.new() # Creating a new CanvasLayer.
 	cinematic_layer.name = "CinematicLayer" # Updating the name of the new CanvasLayer.
 	cinematic_layer.layer = CINEMATIC_LAYER # Updating the layer of the new CanvasLayer.
 	call_deferred("add_child", cinematic_layer) # Adding the new CanvasLayer to the scene.
-	
+
 	## Adding all the necessary ColorRects so the Camera2D+ can work properly.
 	flash_rect = ColorRect.new() # Creating a new ColorRect.
 	flash_rect.name = "FlashRect" # Updating the name of the new ColorRect.
 	flash_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	flash_rect.color = Color.TRANSPARENT # Updating the color of the new ColorRect.
+	flash_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	flash_layer.call_deferred("add_child", flash_rect) # Adding the new ColorRect to the scene.
-	
+
 	top_rect = ColorRect.new() # Creating a new ColorRect.
 	top_rect.name = "TopRect" # Updating the name of the new ColorRect.
 	top_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	top_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	top_rect.global_position.y = -get_viewport_rect().size.y # Updating the position of the new ColorRect.
+	top_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	cinematic_layer.call_deferred("add_child", top_rect) # Adding the new ColorRect to the scene.
-	
+
 	bottom_rect = ColorRect.new() # Creating a new ColorRect.
 	bottom_rect.name = "BottomRect" # Updating the name of the new ColorRect.
 	bottom_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	bottom_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	bottom_rect.global_position.y = get_viewport_rect().size.y # Updating the position of the new ColorRect.
+	bottom_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	cinematic_layer.call_deferred("add_child", bottom_rect) # Adding the new ColorRect to the scene.
-	
+
 	left_rect = ColorRect.new() # Creating a new ColorRect.
 	left_rect.name = "TopRect" # Updating the name of the new ColorRect.
 	left_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	left_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	left_rect.global_position.x = -get_viewport_rect().size.x # Updating the position of the new ColorRect.
+	left_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	cinematic_layer.call_deferred("add_child", left_rect) # Adding the new ColorRect to the scene.
-	
+
 	right_rect = ColorRect.new() # Creating a new ColorRect.
 	right_rect.name = "BottomRect" # Updating the name of the new ColorRect.
 	right_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	right_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	right_rect.global_position.x = get_viewport_rect().size.x # Updating the position of the new ColorRect.
+	right_rect.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	cinematic_layer.call_deferred("add_child", right_rect) # Adding the new ColorRect to the scene.
 
 
@@ -98,15 +103,15 @@ func _process(_delta: float) -> void:
 	## Applying the camera shake.
 	rotation_degrees = randf_range(-shake_strength * SHAKE_ANGLE_MULTIPLIER, shake_strength * SHAKE_ANGLE_MULTIPLIER) + angle_tilt # Randomizing the camera angle.
 	offset = Vector2(randf_range(-shake_strength * SHAKE_POSITION_MULTIPLIER, shake_strength * SHAKE_POSITION_MULTIPLIER), # Randomizing the camera offset.
-					randf_range(-shake_strength * SHAKE_POSITION_MULTIPLIER, shake_strength * SHAKE_POSITION_MULTIPLIER)) + position_tilt
-	
+	randf_range(-shake_strength * SHAKE_POSITION_MULTIPLIER, shake_strength * SHAKE_POSITION_MULTIPLIER)) + position_tilt
+
 	if (shake_strength > 0): # Checking if the shake strength is greater than 0.
 		shake_strength = lerp(shake_strength, 0.0, SHAKE_DECAY) # Slowly decreasing the shake strength if so.
-		
+
 	## Following the desired node.
 	if (node_to_follow): # Checking if the node this camera should follow is valid.
 		global_position = node_to_follow.global_position + FOLLOW_OFFSET # Updating the camera's position.
-		
+
 	## Resetting the camera tilt.
 	position_tilt = lerp(position_tilt, Vector2.ZERO, TILT_POSITION_DECAY) # Resetting the position tilt.
 	angle_tilt = lerpf(angle_tilt, 0.0, TILT_ANGLE_DECAY) # Resetting the angle tilt.
@@ -128,7 +133,7 @@ func tilt_angle(tilt: float) -> void:
 func set_follow_node(new_node_path: NodePath) -> void:
 	# Updating the node path variable.
 	NODE_TO_FOLLOW_PATH = new_node_path
-	
+
 	# Updating the node variable.
 	node_to_follow = get_node(NODE_TO_FOLLOW_PATH)
 
@@ -138,18 +143,18 @@ func flash(color: Color = Color.WHITE, duration: float = 0.5, hold: float = 0.0)
 	## Checking if this function can run.
 	if (not ENABLE_CAMERA_FLASHING): # Checking if the camera flashes are disabled.
 		return # Stopping the function here if so.
-		
+
 	## Updating the FlashRect settings.
 	flash_rect.color = color # Updating the FlashRect color.
-	
+
 	## Waiting before tweening the FlashRect back to transparent.
 	await get_tree().create_timer(hold).timeout # Waiting before creating the tween.
-		
+
 	## Creating the tween that is going to make the camera flash.
 	var tween: Tween = get_tree().create_tween() # Creating a new tween.
 	tween.set_ease(Tween.EASE_OUT) # Updating the tween's easing style.
 	tween.set_trans(Tween.TRANS_LINEAR) # Updating the tween's transition style.
-	
+
 	## Tweening the FlashRect back to transparent.
 	tween.tween_property(flash_rect, "color", Color.TRANSPARENT, duration) # Tweening the FlashRect color.
 
@@ -173,7 +178,7 @@ func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
 	tween.set_ease(Tween.EASE_IN_OUT) # Updating the Tween's easing type.
 	tween.set_trans(Tween.TRANS_QUINT) # Updating the Tween's transition type.
 	tween.set_parallel(true) # Making the Tween able to tween multiple properties at the same time.
-	
+
 	## Enabling / Disabling the horizontal cinematic mode.
 	if (horizontal): # Checking if `horizontal` is true.
 		## Tweening the position of the bottom and the top rect.
@@ -183,7 +188,7 @@ func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
 		## Tweening the position of the bottom and the top rect.
 		tween.tween_property(bottom_rect, "global_position", Vector2(0, get_viewport_rect().size.y + HORIZONTAL_CUT_SIZE), 1.0) # Tweening the bottom rect.
 		tween.tween_property(top_rect, "global_position", Vector2(0, -get_viewport_rect().size.y - HORIZONTAL_CUT_SIZE), 1.0) # Tweening the top rect.
-		
+
 	## Enabling / Disabling the vertical cinematic mode.
 	if (vertical): # Checking if `horizontal` is true.
 		## Tweening the position of the bottom and the top rect.
@@ -193,7 +198,7 @@ func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
 		## Tweening the position of the bottom and the top rect.
 		tween.tween_property(left_rect, "global_position", Vector2(-get_viewport_rect().size.x - VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the left rect.
 		tween.tween_property(right_rect, "global_position", Vector2(get_viewport_rect().size.x + VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the right rect.
-		
+
 	## Updating variables.
 	horizontal_enabled = horizontal # Updating the horizontal variable.
 	vertical_enabled = vertical # Updating the vertical variable.
