@@ -80,14 +80,14 @@ func _ready() -> void:
 	cinematic_layer.call_deferred("add_child", bottom_rect) # Adding the new ColorRect to the scene.
 	
 	left_rect = ColorRect.new() # Creating a new ColorRect.
-	left_rect.name = "TopRect" # Updating the name of the new ColorRect.
+	left_rect.name = "LeftRect" # Updating the name of the new ColorRect.
 	left_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	left_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	left_rect.global_position.x = -get_viewport_rect().size.x # Updating the position of the new ColorRect.
 	cinematic_layer.call_deferred("add_child", left_rect) # Adding the new ColorRect to the scene.
 	
 	right_rect = ColorRect.new() # Creating a new ColorRect.
-	right_rect.name = "BottomRect" # Updating the name of the new ColorRect.
+	right_rect.name = "RightRect" # Updating the name of the new ColorRect.
 	right_rect.size = get_viewport_rect().size # Updating the size of the new ColorRect to make it cover the entire screen.
 	right_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	right_rect.global_position.x = get_viewport_rect().size.x # Updating the position of the new ColorRect.
