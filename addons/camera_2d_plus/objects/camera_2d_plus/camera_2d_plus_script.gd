@@ -25,6 +25,11 @@ class_name Camera2DPlus
 @export_range(0, 1280) var VERTICAL_CUT_SIZE: int = 80 ## The size of the vertical cut when the cinematic mode is enabled.
 @export_range(-99, 99) var CINEMATIC_LAYER: int = 2 ## The layer of the CanvasLayer that the cinematic effects will be at.
 
+@export_group("Camera Zoom")
+@export var ENABLE_SMOOTH_ZOOM: bool = true ## Enable smooth transition as camera zooms in/out
+@export var SMOOTHED_ZOOM_DURATION: float = 1.0 ## The duration of camera zooming in/out in seconds
+@export var TARGET_ZOOM_LEVEL: float = zoom.x ## The target zoom level for the camera.
+
 # Nodes:
 @onready var node_to_follow: Node = get_node(NODE_TO_FOLLOW_PATH)
 
@@ -45,6 +50,7 @@ var vertical_enabled: bool = false ## The value of this variable is determined b
 var position_tilt: Vector2 = Vector2.ZERO ## The camera's position tilt offset.
 var angle_tilt: float = 0.0 ## The camera's angle tilt offset.
 
+var current_zoom_level: float ## The current zoom level of the camera.
 
 func _ready() -> void:
 	## Adding all the necessary CanvasLayers so the Camera2D+ can work properly.
@@ -92,8 +98,8 @@ func _ready() -> void:
 	right_rect.color = Color.BLACK # Updating the color of the new ColorRect.
 	right_rect.global_position.x = get_viewport_rect().size.x # Updating the position of the new ColorRect.
 	cinematic_layer.call_deferred("add_child", right_rect) # Adding the new ColorRect to the scene.
-
-
+	
+	
 func _process(_delta: float) -> void:
 	## Applying the camera shake.
 	rotation_degrees = randf_range(-shake_strength * SHAKE_ANGLE_MULTIPLIER, shake_strength * SHAKE_ANGLE_MULTIPLIER) + angle_tilt # Randomizing the camera angle.
@@ -110,7 +116,9 @@ func _process(_delta: float) -> void:
 	## Resetting the camera tilt.
 	position_tilt = lerp(position_tilt, Vector2.ZERO, TILT_POSITION_DECAY) # Resetting the position tilt.
 	angle_tilt = lerpf(angle_tilt, 0.0, TILT_ANGLE_DECAY) # Resetting the angle tilt.
-
+	
+	## keeping the camera zoom updated towards target zoom
+	perform_camera_zoom()
 
 ## This function instantly moves the camera, and slowly moves it back.
 func tilt_position(tilt_x: float, tilt_y: float) -> void:
@@ -132,6 +140,23 @@ func set_follow_node(new_node_path: NodePath) -> void:
 	# Updating the node variable.
 	node_to_follow = get_node(NODE_TO_FOLLOW_PATH)
 
+
+## This function sets the target zoom level of the camera.
+func set_zoom_level(new_zoom_level: float) -> void:
+	TARGET_ZOOM_LEVEL = new_zoom_level
+	
+	
+## update camera zoom level to the currently set targget zoom
+func perform_camera_zoom() -> void:
+	if zoom != Vector2(TARGET_ZOOM_LEVEL, TARGET_ZOOM_LEVEL): # Check if the zoom level needs to be updated
+		if ENABLE_SMOOTH_ZOOM:
+			var tween = get_tree().create_tween()
+			tween.set_ease(Tween.EASE_IN_OUT) # Set easing style (you can adjust this)
+			tween.set_trans(Tween.TRANS_LINEAR) # Set transition type (you can adjust this)
+			# Tween the zoom property from its current value to the target value
+			tween.tween_property(self, "zoom", Vector2(TARGET_ZOOM_LEVEL, TARGET_ZOOM_LEVEL), SMOOTHED_ZOOM_DURATION)
+		elif not ENABLE_SMOOTH_ZOOM:
+			zoom = Vector2(TARGET_ZOOM_LEVEL, TARGET_ZOOM_LEVEL)
 
 ## This function makes the Camera2DPlus flash with a certain color and with a certain duration.
 func flash(color: Color = Color.WHITE, duration: float = 0.5, hold: float = 0.0) -> void:
@@ -167,7 +192,8 @@ func set_shake(strength: float) -> void:
 
 
 ## This function toggles the cinematic mode.
-func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
+func toggle_cinematic(horizontal: bool, vertical: bool = false,
+ transotion_duration: float = 0.3, include_zoom: float = 0.0) -> void:
 	## Creating and setting up the Tween responsable for moving all the rects.
 	var tween: Tween = get_tree().create_tween() # Creating a new Tween.
 	tween.set_ease(Tween.EASE_IN_OUT) # Updating the Tween's easing type.
@@ -177,15 +203,15 @@ func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
 	## Enabling / Disabling the horizontal cinematic mode.
 	if (horizontal): # Checking if `horizontal` is true.
 		## Tweening the position of the bottom and the top rect.
-		tween.tween_property(bottom_rect, "global_position", Vector2(0, get_viewport_rect().size.y - HORIZONTAL_CUT_SIZE), 1.0) # Tweening the bottom rect.
-		tween.tween_property(top_rect, "global_position", Vector2(0, -get_viewport_rect().size.y + HORIZONTAL_CUT_SIZE), 1.0) # Tweening the top rect.
+		tween.tween_property(bottom_rect, "global_position", Vector2(0, get_viewport_rect().size.y - HORIZONTAL_CUT_SIZE), transotion_duration) # Tweening the bottom rect.
+		tween.tween_property(top_rect, "global_position", Vector2(0, -get_viewport_rect().size.y + HORIZONTAL_CUT_SIZE), transotion_duration) # Tweening the top rect.
 	else:
 		## Tweening the position of the bottom and the top rect.
-		tween.tween_property(bottom_rect, "global_position", Vector2(0, get_viewport_rect().size.y + HORIZONTAL_CUT_SIZE), 1.0) # Tweening the bottom rect.
-		tween.tween_property(top_rect, "global_position", Vector2(0, -get_viewport_rect().size.y - HORIZONTAL_CUT_SIZE), 1.0) # Tweening the top rect.
+		tween.tween_property(bottom_rect, "global_position", Vector2(0, get_viewport_rect().size.y + HORIZONTAL_CUT_SIZE), transotion_duration) # Tweening the bottom rect.
+		tween.tween_property(top_rect, "global_position", Vector2(0, -get_viewport_rect().size.y - HORIZONTAL_CUT_SIZE), transotion_duration) # Tweening the top rect.
 		
 	## Enabling / Disabling the vertical cinematic mode.
-	if (vertical): # Checking if `horizontal` is true.
+	if (vertical): # Checking if `vertical` is true.
 		## Tweening the position of the bottom and the top rect.
 		tween.tween_property(left_rect, "global_position", Vector2(-get_viewport_rect().size.x + VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the left rect.
 		tween.tween_property(right_rect, "global_position", Vector2(get_viewport_rect().size.x - VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the right rect.
@@ -193,6 +219,11 @@ func toggle_cinematic(horizontal: bool, vertical: bool = false) -> void:
 		## Tweening the position of the bottom and the top rect.
 		tween.tween_property(left_rect, "global_position", Vector2(-get_viewport_rect().size.x - VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the left rect.
 		tween.tween_property(right_rect, "global_position", Vector2(get_viewport_rect().size.x + VERTICAL_CUT_SIZE, 0), 1.0) # Tweening the right rect.
+	
+	## handle camera zoom if it is included in the call
+	if include_zoom != 0.0 and TARGET_ZOOM_LEVEL != include_zoom:
+		set_zoom_level(include_zoom)
+		perform_camera_zoom()
 		
 	## Updating variables.
 	horizontal_enabled = horizontal # Updating the horizontal variable.
